@@ -1,11 +1,20 @@
-from optimised_forward_cnn import main
-
+from optimised_forward_cnn import neural_network
+import numpy as np
 average_loss = []
 neuronen_exp = 9
+input_data = np.array([[0,0],[0,1],[1,0],[1,1]], dtype=np.float32)
+output_data = np.array([[0],[1],[1],[0]], dtype=np.float32)
+input_dim = input_data.shape[1]
+output_dim = output_data.shape[1]
+
 
 for i in range(1,neuronen_exp+1):
+  model = neural_network(neurons=2**i, input_dim=input_dim, output_dim=output_dim)
   for j in range(1,10):
-    average_loss.append(main(2**i, 0.1*j))
+    model.reset_weights()
+    model.fit(input_data, output_data, learning_rate=0.1*j, epochs=2000)
+    evaluation = model.evaluate(100, input_data, output_data)
+    average_loss.append(evaluation)
     print(f"Neurons: {2**i}, Learning Rate: {0.1*j}, Average Loss: {average_loss[-1]}")
 
 print(average_loss)
