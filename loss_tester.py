@@ -2,20 +2,17 @@ from optimised_forward_cnn import neural_network
 import numpy as np
 average_loss = []
 neuronen_exp = 9
-input_data = np.array([[0,0],[0,1],[1,0],[1,1]], dtype=np.float32)
-output_data = np.array([[0],[1],[1],[0]], dtype=np.float32)
-input_dim = input_data.shape[1]
-output_dim = output_data.shape[1]
+
 
 
 for i in range(1,neuronen_exp+1):
-  model = neural_network(neurons=2**i, input_dim=input_dim, output_dim=output_dim)
+  model = neural_network(neurons=2**(i+5), input_dim=64, output_dim=10)
   for j in range(1,10):
     model.reset_weights()
-    model.fit(input_data, output_data, learning_rate=0.1*j, epochs=2000)
-    evaluation = model.evaluate(100, input_data, output_data)
+    model.fit(input_data, output_data, learning_rate=0.1*j,batch_size=20, epochs=200)
+    evaluation = model.evaluate(input_test_data, output_test_data)
     average_loss.append(evaluation)
-    print(f"Neurons: {2**i}, Learning Rate: {0.1*j}, Average Loss: {average_loss[-1]}")
+    print(f"Neurons: {2**(i+5)}, Learning Rate: {0.1*j}, Average Loss: {average_loss[-1]}")
 
 print(average_loss)
   
@@ -28,7 +25,7 @@ import seaborn as sns
 loss_matrix = np.array(average_loss).reshape(neuronen_exp, 9)
 
 # 2. Beschriftungen aus deinen Schleifenbereich definieren (range(1,9) und range(1,10))
-neuron_counts = [2**i for i in range(1, neuronen_exp+1)]  # [2, 4, 8, 16, 32, 64, 128, 256]
+neuron_counts = [2**(i+5) for i in range(1, neuronen_exp+1)]  # [2, 4, 8, 16, 32, 64, 128, 256]
 learning_rates = [
     0.1 * j for j in range(1, 10)
 ]  # [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
