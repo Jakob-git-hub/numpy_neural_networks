@@ -1,13 +1,14 @@
 import numpy as np
 
 class neural_network:
-  def __init__(self, neurons,input_dim,  output_dim):
-    self.neurons = neurons
+  def __init__(self, neurons1, neurons2, input_dim,  output_dim):
+    self.neurons1 = neurons1
+    self.neurons2 = neurons2
 
     self.input_dim = input_dim
     self.output_dim = output_dim
 
-    self.layer1_weight, self.layer1_bias, self.layer2_weight, self.layer2_bias = self.create_network(self.input_dim, self.neurons, self.output_dim)
+    self.layer1_weight, self.layer1_bias, self.layer2_weight, self.layer2_bias, self.layer3_weight, self.layer3_bias = self.create_network(self.input_dim, self.neurons1, self.neurons2, self.output_dim)
     
   def get_weight_vector(self, input, neurons):
     weight_vector = np.random.uniform(low=-1.0, high=1.0, size=(input, neurons))
@@ -29,14 +30,17 @@ class neural_network:
     return e_x / np.sum(e_x, axis=1, keepdims=True)
 
 
-  def create_network(self, input_neurons, layer1_neurons, layer2_neurons):
+  def create_network(self, input_neurons, layer1_neurons, layer2_neurons, output_neurons):
     layer1_weight = self.get_weight_vector(input_neurons, layer1_neurons)
     layer1_bias = self.get_bias_vector(layer1_neurons)
 
-    layer2_weight = self.get_weight_vector(layer1_weight.shape[1], layer2_neurons)
+    layer2_weight = self.get_weight_vector(layer1_neurons, layer2_neurons)
     layer2_bias = self.get_bias_vector(layer2_neurons)
 
-    return layer1_weight, layer1_bias, layer2_weight, layer2_bias
+    layer3_weight = self.get_weight_vector(layer2_neurons, output_neurons)
+    layer3_bias = self.get_bias_vector(output_neurons)
+
+    return layer1_weight, layer1_bias, layer2_weight, layer2_bias, layer3_weight, layer3_bias
 
 
 
@@ -45,14 +49,16 @@ class neural_network:
     
     layer1_linear = (input_data@self.layer1_weight) + self.layer1_bias
     layer1_output = self.relu(layer1_linear)
-    layer2_output = (layer1_output@self.layer2_weight) + self.layer2_bias
-    final_output = self.softmax(layer2_output)
+    layer2_linear = (layer1_output@self.layer2_weight) + self.layer2_bias
+    layer2_output = self.relu(layer2_linear)
+    layer3_output = (layer2_output@self.layer3_weight) + self.layer3_bias
+    final_output = self.softmax(layer3_output)
 
-    return layer1_linear, layer1_output, final_output
+    return layer1_linear, layer1_output, layer2_linear, layer2_output, final_output
 
 
   def reset_weights(self):
-    self.layer1_weight, self.layer1_bias, self.layer2_weight, self.layer2_bias = self.create_network(self.input_dim, self.neurons, self.output_dim)
+    self.layer1_weight, self.layer1_bias, self.layer2_weight, self.layer2_bias, self.layer3_weight, self.layer3_bias = self.create_network(self.input_dim, self.neurons1, self.neurons2, self.output_dim)
 
   def one_hot_encoder(self, labels): 
     one_hot_labels = np.zeros((labels.shape[0], self.output_dim))
@@ -86,27 +92,39 @@ class neural_network:
             batch_labels = data_labels[i*batch_size:(i+1)*batch_size]
             # 1. Forward Pass (für den GESAMTEN Batch auf einmal)
             # xor_input hat Shape (batch_size, in_dim)
-            l1_linear, l1_out, output = self.forward_pass(batch)
+            batch = input_data[i*batch_size:(i+1)*batch_size]
+            batch_labels = data_labels[i*batch_size:(i+1)*batch_size]
+            # 1. Forward Pass (für den GESAMTEN Batch auf einmal)
+            # xor_input hat Shape (batch_size, in_dim)
+            l1_linear, l1_out, l2_linear, l2_out, output = self.forward_pass(batch)
             
             # 2. Backpropagation Layer 2 (Output-Schicht)
             # Shape: (batch_size, out_dim)
-            error_output = (output - batch_labels) / batch_size
+            error_output = (output - batch_labels)/batch_size  # Durchschnitt über den Batch
             
             # Gradienten für Layer 2
             # Transponieren von l1_out: (hidden_dim, batch_size) @ (batch_size, out_dim) -> (hidden_dim, out_dim)
-            grad_w2 = np.dot(l1_out.T, error_output)/batch_size
-            grad_b2 = np.sum(error_output, axis=0)/batch_size  # Summe über alle Zeilen (den Batch)
-
+            grad_w3 = np.dot(l2_out.T, error_output)
+            grad_b3 = np.sum(error_output, axis=0)  # Summe über alle Zeilen (den Batch)
+            
             # 3. Backpropagation Layer 1 (Hidden-Schicht)
             # (batch_size, out_dim) @ (out_dim, hidden_dim) -> (batch_size, hidden_dim)
-            error_hidden = np.dot(error_output, self.layer2_weight.T) * self.relu_derivative(l1_linear)
-            
+            error_hidden_2 = np.dot(error_output, self.layer3_weight.T) * self.relu_derivative(l2_linear)
+            error_hidden_1 = np.dot(error_hidden_2, self.layer2_weight.T) * self.relu_derivative(l1_linear)
             # Gradienten für Layer 1
             # Transponieren von input_data: (in_dim, batch_size) @ (batch_size, hidden_dim) -> (in_dim, hidden_dim)
-            grad_w1 = np.dot(batch.T, error_hidden)/batch_size  # Durchschnitt über den Batch
-            grad_b1 = np.sum(error_hidden, axis=0)/batch_size # Summe über den Batch
-
+            grad_w2 = np.dot(l1_out.T, error_hidden_2)  # Durchschnitt über den Batch
+            grad_b2 = np.sum(error_hidden_2, axis=0) # Summe über den Batch
+            
+            error_hidden_1 = np.dot(error_hidden_2, self.layer2_weight.T) * self.relu_derivative(l1_linear)
+            
+            grad_w1 = np.dot(batch.T, error_hidden_1)
+            grad_b1 = np.sum(error_hidden_1, axis=0)
+            
+            
             # 4. Gewichte und Biases aktualisieren
+            self.layer3_weight -= learning_rate * grad_w3
+            self.layer3_bias   -= learning_rate * grad_b3
             self.layer2_weight -= learning_rate * grad_w2
             self.layer2_bias   -= learning_rate * grad_b2
             self.layer1_weight -= learning_rate * grad_w1
@@ -118,7 +136,7 @@ class neural_network:
   def predict(self, input_data):
     from matplotlib import pyplot as plt
     flattened_input = self.flatten_input(input_data)
-    _, _, pred = self.forward_pass(flattened_input)
+    _, _, _, _, pred = self.forward_pass(flattened_input)
     print(f"Input: {input_data} -> Vorhersage: {np.argmax(pred)}, mit der Warscheinlichkeit: {pred}")
     plt.imshow(input_data, cmap='gray')  # cmap='gray' sorgt für die korrekte Schwarz-Weiß-Darstellung
     plt.axis('off')                     # Blendat die Achsenbeschriftung für eine sauberere Optik aus
@@ -130,7 +148,7 @@ class neural_network:
     test_input_data = self.flatten_input(test_input_data)
     test_output_data = self.one_hot_encoder(test_output_data)
    
-    _, _, pred = self.forward_pass(test_input_data)
+    _, _, _, _, pred = self.forward_pass(test_input_data)
 
         
     # Categorical Cross-Entropy Loss
