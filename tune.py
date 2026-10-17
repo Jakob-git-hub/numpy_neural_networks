@@ -27,7 +27,8 @@ for i in range(1,neuronen_exp+1):
     print(f"Neurons: {2**(i+5)}, Learning Rate: {0.1*j}, Average Loss: {average_loss[-1]}, Accuracy: {1-average_loss[-1]}")
 
 print(average_loss)
-  
+print(min(average_loss))
+
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
