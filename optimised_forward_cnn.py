@@ -42,9 +42,6 @@ class neural_network:
 
     return layer1_weight, layer1_bias, layer2_weight, layer2_bias, layer3_weight, layer3_bias
 
-
-
-
   def forward_pass(self, input_data):
     
     layer1_linear = (input_data@self.layer1_weight) + self.layer1_bias
@@ -71,7 +68,7 @@ class neural_network:
     flattened = array.reshape(new_shape)
     return flattened
   
-  def fit(self, input_data, data_labels , learning_rate, batch_size, epochs):
+  def fit(self, input_data, data_labels, x_test, y_test, learning_rate, batch_size, epochs):
     n_samples = batch_size * (input_data.shape[0] // batch_size)
     input_data = input_data[:n_samples]
     data_labels = data_labels[:n_samples]
@@ -79,15 +76,20 @@ class neural_network:
     n_batches = input_data.shape[0] // batch_size
     input_data = self.flatten_input(input_data)
     data_labels = self.one_hot_encoder(data_labels)
-
+    
+    loss_list = []
 
     for j in range(epochs):
+        print(f"Episode: {j}")
+        loss_now, acc_now = self.evaluate(x_test, y_test)
+        loss_list.append(loss_now)
+        print(f"Aktueller Test-Loss: {loss_now}; Aktuelle Accuracy: {acc_now};")
         indices = np.arange(input_data.shape[0])
         np.random.shuffle(indices)
         input_data = input_data[indices]
         data_labels = data_labels[indices]
         for i in range((n_batches)):
-
+          
             batch = input_data[i*batch_size:(i+1)*batch_size]
             batch_labels = data_labels[i*batch_size:(i+1)*batch_size]
             # 1. Forward Pass (für den GESAMTEN Batch auf einmal)
@@ -129,6 +131,9 @@ class neural_network:
             self.layer2_bias   -= learning_rate * grad_b2
             self.layer1_weight -= learning_rate * grad_w1
             self.layer1_bias   -= learning_rate * grad_b1
+    return loss_list
+
+        
 
 
 
@@ -146,7 +151,7 @@ class neural_network:
 
   def evaluate(self, test_input_data, test_output_data):
     test_input_data = self.flatten_input(test_input_data)
-    test_output_data = self.one_hot_encoder(test_output_data)
+    test_output_data_encoded = self.one_hot_encoder(test_output_data)
    
     _, _, _, _, pred = self.forward_pass(test_input_data)
 
@@ -154,8 +159,9 @@ class neural_network:
     # Categorical Cross-Entropy Loss
     eps = 1e-15
     pred_clipped = np.clip(pred, eps, 1 - eps)
-    loss = -np.mean(np.sum(test_output_data * np.log(pred_clipped), axis=1))
-    
+    pred_label = np.argmax(pred, axis=1)
+    loss = -np.mean(np.sum(test_output_data_encoded * np.log(pred_clipped), axis=1))
+    accuracy = np.mean(pred_label == test_output_data)
   
-    return loss
+    return loss, accuracy
 

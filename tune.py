@@ -28,7 +28,7 @@ print(X_test.shape)
 #output_test_data = output_data[int(output_data.shape[0]*train_test_split):]
 
 neuronen_exp = 3
-starting_neurons = 64
+starting_neurons = 32
 average_loss = []
 print("Starting Grid Search for Neurons and Learning Rate")
 for i in range(1,neuronen_exp+1):
