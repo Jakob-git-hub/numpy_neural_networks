@@ -2,29 +2,43 @@ from optimised_forward_cnn import neural_network
 import numpy as np
 from sklearn.datasets import load_digits
 import random as rd
+import ssl
 
-digits = load_digits()
+ssl._create_default_https_context = ssl._create_unverified_context
+
+from tensorflow.keras.datasets import mnist # type: ignore
+
+# Loads directly as 3D arrays
+(X_train, y_train), (X_test, y_test) = mnist.load_data()
+
+# Normalize to 0.0 - 1.0
+X_train = X_train / 255.0
+X_test = X_test / 255.0
+
 train_test_split = 0.8
-input_data = (digits.images/16.0).astype(np.float32)
-output_data = digits.target
+X_test =  X_test[0:int(X_test.shape[0]*0.1)]
+y_test = y_test[0:int(y_test.shape[0]*0.1)]
 
-input_train_data= input_data[0:int(input_data.shape[0]*train_test_split)]
-output_train_data = output_data[0:int(output_data.shape[0]*train_test_split)]
+print(X_train.shape)  
+print(X_test.shape)
+#input_train_data= input_data[0:int(input_data.shape[0]*train_test_split)]
+#output_train_data = output_data[0:int(output_data.shape[0]*train_test_split)]
 
-input_test_data = input_data[int(input_data.shape[0]*train_test_split):]
-output_test_data = output_data[int(output_data.shape[0]*train_test_split):]
+#input_test_data = input_data[int(input_data.shape[0]*train_test_split):]
+#output_test_data = output_data[int(output_data.shape[0]*train_test_split):]
 
-neuronen_exp = 6
+neuronen_exp = 3
+starting_neurons = 32
 average_loss = []
-
+print("Starting Grid Search for Neurons and Learning Rate")
 for i in range(1,neuronen_exp+1):
-  model = neural_network(neurons=2**(i+5), input_dim=64, output_dim=10)
+  model = neural_network(neurons1=int(starting_neurons*(2**(i-1))), neurons2=int(starting_neurons*(2**(i-3))), input_dim=784, output_dim=10)
   for j in range(1,10):
     model.reset_weights()
-    model.fit(input_train_data, output_train_data, learning_rate=0.1*j, batch_size=15, epochs=20)
-    evaluation = model.evaluate(input_test_data, output_test_data)
+    model.fit(X_train, y_train, learning_rate=0.3*(0.8**j), batch_size=200, epochs=25)
+    evaluation = model.evaluate(X_train, y_train)
     average_loss.append(evaluation)
-    print(f"Neurons: {2**(i+5)}, Learning Rate: {0.1*j}, Average Loss: {average_loss[-1]}, Accuracy: {1-average_loss[-1]}")
+    print(f"Neurons: {starting_neurons*(2**(i-1)), starting_neurons*(2**(i-3))}, Learning Rate: {0.3*(0.8**j)}, Average Loss: {average_loss[-1]}, Accuracy: {1-average_loss[-1]}")
 
 print(average_loss)
 print(min(average_loss))
