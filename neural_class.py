@@ -30,6 +30,8 @@ class neural_net:
         return np.where(x > 0, 1.0, 0.0)
     def sigmoid(self, x):
         return 1 / (1 + np.exp(-x))
+    def sin(x):
+        
     def softmax(self,x):
         if x.ndim == 1:
             x = x.reshape(1, -1)
@@ -66,17 +68,27 @@ class neural_net:
 
 
         
-class data:
-    def __init__(self,x,y,split,):
+class data:                
+    def __init__(self,x,y,split,batch_size):
+        split_index = int(y.shape[0]*split//batch_size)*batch_size
         x = self.flatten_input(x)
         y = self.one_hot_encoder(y)
-        x_train = 
+        self.x_train = x[0:split_index]
+        self.y_train = y[0:split_index]
+        self.x_test = x[split_index:]
+        self.y_test = y[split_index:]
 
     def one_hot_encoder(self, labels): 
         one_hot_labels = np.zeros((labels.shape[0], self.output_dim))
         for index, number in enumerate(labels):
            one_hot_labels[index][number]= 1.0
         return one_hot_labels
+    
+    def shuffle_data(self):
+        indices = np.arange(len(self.x_train))
+        np.random.shuffle(indices)
+        self.x_train = self.x_train[indices]
+        self.y_train = self.y_train[indices]
          
     def flatten_input(self, array):
         new_shape = array.shape[:-2] + (array.shape[-2] * array.shape[-1],)
