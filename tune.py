@@ -21,7 +21,7 @@ for i in range(1,neuronen_exp+1):
   model = neural_network(neurons=2**(i+5), input_dim=64, output_dim=10)
   for j in range(1,10):
     model.reset_weights()
-    model.fit(input_train_data, output_train_data, learning_rate=0.1*j, batch_size=15, epochs=20)
+    model.fit(input_train_data, output_train_data, learning_rate=0.1*j, batch_size=15, epochs=200)
     evaluation = model.evaluate(input_test_data, output_test_data)
     average_loss.append(evaluation)
     print(f"Neurons: {2**(i+5)}, Learning Rate: {0.1*j}, Average Loss: {average_loss[-1]}, Accuracy: {1-average_loss[-1]}")
