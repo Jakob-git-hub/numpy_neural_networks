@@ -62,8 +62,10 @@ class neural_net:
             grad[idx]["weight"] = error_signal*layer_buffer[idx-1]["activated"]
 
     def fit(self, x_train,):
-        output, layer_buffer = self.forward_pass()
+        
 
+
+        
 class data:
     def __init__(self,x,y,split,):
         x = self.flatten_input(x)
