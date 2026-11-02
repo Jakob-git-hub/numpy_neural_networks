@@ -30,8 +30,17 @@ class neural_net:
         return np.where(x > 0, 1.0, 0.0)
     def sigmoid(self, x):
         return 1 / (1 + np.exp(-x))
+    def sigmoid_d(self, x):
+        sigmoid = self.sigmoid(x)
+        return sigmoid * (1 - sigmoid)
     def sin(self, x):
         return np.sin(x)
+    def sin_d(self, x):
+        return np.cos(x)
+    def relu_sin(self, x):
+        return (np.sin(x) + np.max(0,x))
+    def relu_sin_d(self, x):
+        return  np.select([x < 0, x > 0], [np.cos(x), 1 + np.cos(x)], default=np.nan)
 
     def softmax(self,x):
         if x.ndim == 1:
@@ -41,7 +50,7 @@ class neural_net:
 
 
     def forward_pass(self, input_data):
-        layer_buffer = {}
+        layer_buffer = {"input": input_data}
         layer_input = input_data
 
         for idx, layer in enumerate(self.model):
@@ -57,40 +66,98 @@ class neural_net:
         return layer_input, layer_buffer
 
     def backpropagation(self, labels, layer_buffer, output, batch_size):
+        """Return the weight and bias gradients for every layer.
+
+        The loss gradient is calculated for mean squared error:
+        ``loss = 0.5 * mean((output - labels) ** 2)``.
+        """
         grad = {}
-        error_signal = labels - output / batch_size
+        error_signal = (output - labels) / batch_size
+
         for idx, layer in reversed(list(enumerate(self.model))):
             grad[idx] = {}
-            grad[idx]["bias"] = np.sum(error_signal, axis=0, keepdims=True) / batch_size
-            grad[idx]["weight"] = error_signal*layer_buffer[idx-1]["activated"]
 
-    def fit(self, x_train,):
-        pass
+            activation_derivative = getattr(self, f"{layer.activation}_d")
+            delta = error_signal * activation_derivative(
+                layer_buffer[idx]["linear"]
+            )
+
+            if idx == 0:
+                layer_input = layer_buffer.get("input")
+            else:
+                layer_input = layer_buffer[idx - 1]["activated"]
+
+            if layer_input is None:
+                raise ValueError(
+                    "layer_buffer must contain the input under the 'input' key"
+                )
+
+            grad[idx]["weight"] = layer_input.T @ delta
+            grad[idx]["bias"] = np.sum(delta, axis=0, keepdims=True)
+
+            error_signal = delta @ layer.weight.T
+
+        return grad
+
+    def fit(self, dataset, learning_rate, epochs):
+
+        for j in range(epochs):
+            dataset.shuffle_data()
+            for i in range(dataset.n_batches):
+                batch = dataset.x_train[i*dataset.batch_size:(i+1)*dataset.batch_size]
+                batch_labels = dataset.y_train[i*dataset.batch_size:(i+1)*dataset.batch_size]
+                output, layer_buffer = self.forward_pass(batch)
+                grads = self.backpropagation(batch_labels, layer_buffer, output, dataset.batch_size)
+                for idx,layer in enumerate(self.model):
+                    layer.weight -= learning_rate * grads[idx]["weight"]
+                    layer.bias -= learning_rate * grads[idx]["bias"]
+
+            Loss, Accuracy = self.evaluate(dataset)
+            print(f"Episode: {j}, Loss: {Loss:.4f}, Accuracy: {Accuracy:.2%}")
+   
+    def evaluate(self, dataset):
 
 
-class data:
-    def __init__(self,x,y,split,batch_size):
-        split_index = int(y.shape[0]*split//batch_size)*batch_size
-        x = self.flatten_input(x)
-        y = self.one_hot_encoder(y)
-        self.x_train = x[0:split_index]
-        self.y_train = y[0:split_index]
-        self.x_test = x[split_index:]
-        self.y_test = y[split_index:]
+        output,_ = self.forward_pass()
+        
+        eps = 1e-15
+        pred_clipped = np.clip(output, eps, 1 - eps)
+        pred_label = np.argmax(output, axis=1)
+        loss = -np.mean(np.sum(dataset.y_test * np.log(pred_clipped), axis=1))
+        accuracy = np.mean(pred_label == np.argmax(dataset.y_test, axis=1))
+          
+        return loss, accuracy
+    
+class dataset:  
+    def __init__(self,x,y):
+        self.x = x
+        self.y = y
 
-    def one_hot_encoder(self, labels):
-        one_hot_labels = np.zeros((labels.shape[0], self.output_dim))
-        for index, number in enumerate(labels):
+    def one_hot_encoder(self, output_dim):
+        one_hot_labels = np.zeros((self.y.shape[0], output_dim))
+        for index, number in enumerate(self.y):
            one_hot_labels[index][number]= 1.0
-        return one_hot_labels
+        self.y = one_hot_labels
+    def normalize_input(self):
+        self.x = self.x / 255.0
+
+    def flatten_input(self):
+        new_shape = self.x.shape[:-2] + (self.x.shape[-2] * self.x.shape[-1],)
+        flattened = self.x.reshape(new_shape)
+        self.x = flattened
+
+    def split_data(self, split, batch_size):
+        self.n_batches = (self.x.shape[0]*split//batch_size)
+        self.batch_size = batch_size
+        split_index = self.n_batches*batch_size
+        
+        self.x_train = self.x[0:split_index]
+        self.y_train = self.y[0:split_index]
+        self.x_test = self.x[split_index:]
+        self.y_test = self.y[split_index:]
 
     def shuffle_data(self):
-        indices = np.arange(len(self.x_train))
-        np.random.shuffle(indices)
-        self.x_train = self.x_train[indices]
-        self.y_train = self.y_train[indices]
-
-    def flatten_input(self, array):
-        new_shape = array.shape[:-2] + (array.shape[-2] * array.shape[-1],)
-        flattened = array.reshape(new_shape)
-        return flattened
+            indices = np.arange(len(self.x_train))
+            np.random.shuffle(indices)
+            self.x_train = self.x_train[indices]
+            self.y_train = self.y_train[indices]

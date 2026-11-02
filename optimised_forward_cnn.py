@@ -23,10 +23,11 @@ class neural_network:
       return np.where(x > 0, 1.0, 0.0)
   def sigmoid(self, x):
       return 1 / (1 + np.exp(-x))
-  def sin(self, x):
-      return np.sin(x)
-  def sin_derivative(self, x):
-      return np.cos(x)
+  def relu_sin(self, x):
+      return (np.sin(x) + np.max(0,x))
+  def relu_sin_derivative(self, x):
+      return  np.select([x < 0, x > 0], [np.cos(x), 1 + np.cos(x)], default=np.nan)
+
   def softmax(self,x):
     if x.ndim == 1:
         x = x.reshape(1, -1)
@@ -49,9 +50,9 @@ class neural_network:
   def forward_pass(self, input_data):
     
     layer1_linear = (input_data@self.layer1_weight) + self.layer1_bias
-    layer1_output = self.sin(layer1_linear)
+    layer1_output = self.relu_sin(layer1_linear)
     layer2_linear = (layer1_output@self.layer2_weight) + self.layer2_bias
-    layer2_output = self.sin(layer2_linear)
+    layer2_output = self.relu_sin(layer2_linear)
     layer3_output = (layer2_output@self.layer3_weight) + self.layer3_bias
     final_output = self.softmax(layer3_output)
 
@@ -115,14 +116,14 @@ class neural_network:
             
             # 3. Backpropagation Layer 1 (Hidden-Schicht)
             # (batch_size, out_dim) @ (out_dim, hidden_dim) -> (batch_size, hidden_dim)
-            error_hidden_2 = np.dot(error_output, self.layer3_weight.T) * self.sin_derivative(l2_linear)
+            error_hidden_2 = np.dot(error_output, self.layer3_weight.T) * self.relu_sin_derivative(l2_linear)
 
             # Gradienten für Layer 1
             # Transponieren von input_data: (in_dim, batch_size) @ (batch_size, hidden_dim) -> (in_dim, hidden_dim)
             grad_w2 = np.dot(l1_out.T, error_hidden_2)  # Durchschnitt über den Batch
             grad_b2 = np.sum(error_hidden_2, axis=0) # Summe über den Batch
             
-            error_hidden_1 = np.dot(error_hidden_2, self.layer2_weight.T) * self.sin_derivative(l1_linear)
+            error_hidden_1 = np.dot(error_hidden_2, self.layer2_weight.T) * self.relu_sin_derivative(l1_linear)
             
             grad_w1 = np.dot(batch.T, error_hidden_1)
             grad_b1 = np.sum(error_hidden_1, axis=0)

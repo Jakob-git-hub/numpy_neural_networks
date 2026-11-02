@@ -6,10 +6,10 @@ import ssl
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
-from tensorflow.keras.datasets import mnist # type: ignore
+from tensorflow.keras.datasets import fashion_mnist # type: ignore
 
 # Loads directly as 3D arrays
-(X_train, y_train), (X_test, y_test) = mnist.load_data()
+(X_train, y_train), (X_test, y_test) = fashion_mnist.load_data()
 
 # Normalize to 0.0 - 1.0
 X_train = X_train / 255.0
