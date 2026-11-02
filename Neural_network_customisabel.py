@@ -7,7 +7,7 @@ class neural_network:
 
     self.input_dim = input_dim
     self.output_dim = output_dim
-
+    
     self.weights = self.create_network(self.input_dim,self.output_dim)
     
   def get_weight_vector(self, input, neurons):
@@ -30,21 +30,50 @@ class neural_network:
     return e_x / np.sum(e_x, axis=1, keepdims=True)
 
 
-  def create_network(self, input_neurons, layer1_neurons, layer2_neurons, output_neurons):
-    layer1_weight = self.get_weight_vector(input_neurons, layer1_neurons)
-    layer1_bias = self.get_bias_vector(layer1_neurons)
+  def initialize_architecture(self, layer_list):
+    self.weights = {}
+    input_placeholder = 5
+    for index, element in enumerate(layer_list):
+      if index == 0:
+        self.weights["Layer" + str(index)] = {"weight":np.zeros(size=(input_placeholder, element[0])),
+                                         "bias":np.zeros(size=(1,element[0])),
+                                         "activation:":element[1]}
 
-    layer2_weight = self.get_weight_vector(layer1_neurons, layer2_neurons)
-    layer2_bias = self.get_bias_vector(layer2_neurons)
+      else:
+        self.weights["Layer" + str(index)] = {"weight":np.zeros(size=(layer_list[index-1][0], element[0])),
+                                          "bias":np.zeros(size=(1,element[0])),
+                                          "activation:":element[1]}
+    
+  
 
 
-    weights= { "layer1": {"weight": layer1_weight, "bias": layer1_bias, activation: "relu"},
-              "layer2": {"weight": layer2_weight, "bias": layer2_bias}
-              }
-    return layer1_weight, layer1_bias, layer2_weight, layer2_bias
+  def build_network(self, input_dim):
+    weights = self.weights
+    uniform_input_dim = 1
 
-  def add(self, layer_name, neurons, activation):
-     f)
+    if isinstance(input_dim, tuple):
+      for num in input_dim:
+         uniform_input_dim *= num
+    else:
+       uniform_input_dim = input_dim
+    
+    randomised_weights = {}
+    for index, (layer_nama,element) in enumerate(weights.items()):
+       if index == 0:
+         randomised_weights["Layer" + str(index)] = {"weight":self.get_weight_vector(uniform_input_dim, element["weight"].shape[1]),
+                                               "bias":self.get_bias_vector(element["bias"].shape[1]),
+                                               "activation:":element["activation"]}
+       
+       else:
+         randomised_weights["Layer" + str(index)] = {"weight":self.get_weight_vector((element["weight"].shape[0], element["weight"].shape[1])),
+                                               "bias":self.get_bias_vector(element["bias"].shape[1]),
+                                               "activation:":element["activation"]}
+
+    return randomised_weights
+
+      
+ 
+
 
   def forward_pass(self, input_data):
     

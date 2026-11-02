@@ -36,7 +36,7 @@ for i in range(1,neuronen_exp+1):
   for j in range(1,10):
     model.reset_weights()
     model.fit(X_train, y_train, learning_rate=0.3*(0.8**j), batch_size=200, epochs=25)
-    evaluation = model.evaluate(X_train, y_train)
+    loss,evaluation = model.evaluate(X_train, y_train)
     average_loss.append(evaluation)
     print(f"Neurons: {starting_neurons*(2**(i-1)), starting_neurons*(2**(i-3))}, Learning Rate: {0.3*(0.8**j)}, Average Loss: {average_loss[-1]}, Accuracy: {1-average_loss[-1]}")
 

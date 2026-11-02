@@ -23,8 +23,8 @@ print(X_train.shape)
 print(y_train.shape)
 output_dim = 10
 
-model = neural_network(64,24, X_train.shape[1]*X_train.shape[2], output_dim)
-loss = model.fit(X_train, y_train, X_test, y_test, 0.01, 8, 20)
+model = neural_network(48, 32, X_train.shape[1]*X_train.shape[2], output_dim)
+loss = model.fit(X_train, y_train, X_test, y_test, 0.01, 20, 20)
 
 test_loss, test_accuracy = model.evaluate(X_test, y_test)
 
