@@ -2,12 +2,18 @@ import numpy as np
 architecture = [[5,"relu"],[2,"relu"]]
 
 class Layer:
-    def __init__(self, input, neurons, activation):
-        self.input = input
+    def __init__(self, input_dim, neurons, activation):
+        self.input_dim = input_dim
         self.neurons = neurons
         self.activation = activation
-        self.weight = np.random.uniform(low=-1.0,high=1.0, size=(input, neurons))
-        self.bias = np.random.uniform(low=-1.0, high=1.0, size=(1,neurons))
+        if activation in ("relu", "relu_sin"):
+            scale = np.sqrt(2.0 / input_dim)
+        else:
+            scale = np.sqrt(1.0 / input_dim)
+
+        self.weight = np.random.randn(input_dim, neurons) * scale
+        self.bias = np.zeros((1, neurons))
+
 
 
 class neural_net:
@@ -28,25 +34,53 @@ class neural_net:
         return np.maximum(0, x)
     def relu_d(self, x):
         return np.where(x > 0, 1.0, 0.0)
+    def relu_backward(self, x, upstream_gradient):
+        return upstream_gradient * self.relu_d(x)
+    
     def sigmoid(self, x):
         return 1 / (1 + np.exp(-x))
     def sigmoid_d(self, x):
         sigmoid = self.sigmoid(x)
         return sigmoid * (1 - sigmoid)
+    def sigmoid_backward(self, x, upstream_gradient):
+        return upstream_gradient * self.sigmoid_d(x)
+    
     def sin(self, x):
         return np.sin(x)
     def sin_d(self, x):
         return np.cos(x)
+    def sin_backward(self, x, upstream_gradient):
+        return upstream_gradient * self.sin_d(x)
+    
     def relu_sin(self, x):
-        return (np.sin(x) + np.max(0,x))
+        return (np.sin(x) + np.maximum(0,x))
     def relu_sin_d(self, x):
-        return  np.select([x < 0, x > 0], [np.cos(x), 1 + np.cos(x)], default=np.nan)
-
+        return  np.select([x < 0, x > 0], [np.cos(x), 1 + np.cos(x)])
+    def relu_sin_backward(self, x, upstream_gradient):
+        return upstream_gradient * self.relu_sin_d(x)
+    
+    def arctan_sin(self, x):
+        return (np.arctan(x) +np.sin(x))
+    def arctan_sin_d(self, x):
+        return  np.select([x < 0, x > 0], [1/(1+x**2), np.cos(x) + 1/(1+x**2)])
+    def arctan_sin_backward(self, x, upstream_gradient):
+        return upstream_gradient * self.arctan_sin_d(x)
+    
     def softmax(self,x):
         if x.ndim == 1:
             x = x.reshape(1, -1)
         e_x = np.exp(x - np.max(x, axis=1, keepdims=True))
         return e_x / np.sum(e_x, axis=1, keepdims=True)
+    def softmax_d(self, x):
+        s = self.softmax(x)
+        return (
+            s[:, :, np.newaxis]
+            * (np.eye(s.shape[1])[np.newaxis, :, :] - s[:, np.newaxis, :])
+        )
+    def softmax_backward(self, x, upstream_gradient):
+        s = self.softmax(x)
+        jacobian_product = np.sum(upstream_gradient * s, axis=1, keepdims=True)
+        return s * (upstream_gradient - jacobian_product)
 
 
     def forward_pass(self, input_data):
@@ -66,20 +100,20 @@ class neural_net:
         return layer_input, layer_buffer
 
     def backpropagation(self, labels, layer_buffer, output, batch_size):
-        """Return the weight and bias gradients for every layer.
-
-        The loss gradient is calculated for mean squared error:
-        ``loss = 0.5 * mean((output - labels) ** 2)``.
-        """
+        """Return weight and bias gradients for categorical cross-entropy."""
         grad = {}
-        error_signal = (output - labels) / batch_size
+        eps = 1e-15
+        output_clipped = np.clip(output, eps, 1 - eps)
+        error_signal = -labels / output_clipped / batch_size
 
         for idx, layer in reversed(list(enumerate(self.model))):
             grad[idx] = {}
 
-            activation_derivative = getattr(self, f"{layer.activation}_d")
-            delta = error_signal * activation_derivative(
-                layer_buffer[idx]["linear"]
+            activation_backward = getattr(
+                self, f"{layer.activation}_backward"
+            )
+            delta = activation_backward(
+                layer_buffer[idx]["linear"], error_signal
             )
 
             if idx == 0:
@@ -113,12 +147,15 @@ class neural_net:
                     layer.bias -= learning_rate * grads[idx]["bias"]
 
             Loss, Accuracy = self.evaluate(dataset)
+  
             print(f"Episode: {j}, Loss: {Loss:.4f}, Accuracy: {Accuracy:.2%}")
-   
+
+
+
     def evaluate(self, dataset):
 
 
-        output,_ = self.forward_pass()
+        output,_ = self.forward_pass(dataset.x_test)
         
         eps = 1e-15
         pred_clipped = np.clip(output, eps, 1 - eps)
@@ -132,6 +169,12 @@ class dataset:
     def __init__(self,x,y):
         self.x = x
         self.y = y
+
+    def prepare(self, output_dim, split, batch_size):
+        self.normalize_input()
+        self.flatten_input()
+        self.one_hot_encoder(output_dim)
+        self.split_data(split, batch_size)
 
     def one_hot_encoder(self, output_dim):
         one_hot_labels = np.zeros((self.y.shape[0], output_dim))
@@ -147,9 +190,9 @@ class dataset:
         self.x = flattened
 
     def split_data(self, split, batch_size):
-        self.n_batches = (self.x.shape[0]*split//batch_size)
+        self.n_batches = int((self.x.shape[0]*split)//batch_size)
         self.batch_size = batch_size
-        split_index = self.n_batches*batch_size
+        split_index = int(self.n_batches*batch_size)
         
         self.x_train = self.x[0:split_index]
         self.y_train = self.y[0:split_index]

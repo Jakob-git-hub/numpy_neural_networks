@@ -1,0 +1,192 @@
+[
+  {
+    "architecture": [
+      [
+        512,
+        "relu"
+      ],
+      [
+        10,
+        "softmax"
+      ]
+    ],
+    "learning_rate": 0.003,
+    "batch_size": 64,
+    "loss": 3.168440262917525,
+    "accuracy": 0.7911446469248291,
+    "seed": 46
+  },
+  {
+    "architecture": [
+      [
+        256,
+        "relu"
+      ],
+      [
+        10,
+        "softmax"
+      ]
+    ],
+    "learning_rate": 0.003,
+    "batch_size": 64,
+    "loss": 2.169081806517808,
+    "accuracy": 0.7686503416856492,
+    "seed": 44
+  },
+  {
+    "architecture": [
+      [
+        512,
+        "relu"
+      ],
+      [
+        10,
+        "softmax"
+      ]
+    ],
+    "learning_rate": 0.001,
+    "batch_size": 64,
+    "loss": 4.525898077579627,
+    "accuracy": 0.7487186788154897,
+    "seed": 45
+  },
+  {
+    "architecture": [
+      [
+        256,
+        "relu"
+      ],
+      [
+        10,
+        "softmax"
+      ]
+    ],
+    "learning_rate": 0.001,
+    "batch_size": 64,
+    "loss": 3.5904312829543685,
+    "accuracy": 0.7319191343963554,
+    "seed": 43
+  },
+  {
+    "architecture": [
+      [
+        128,
+        "relu"
+      ],
+      [
+        10,
+        "softmax"
+      ]
+    ],
+    "learning_rate": 0.001,
+    "batch_size": 64,
+    "loss": 2.9250338961033666,
+    "accuracy": 0.6792425968109339,
+    "seed": 42
+  },
+  {
+    "architecture": [
+      [
+        256,
+        "arctan_sin"
+      ],
+      [
+        128,
+        "arctan_sin"
+      ],
+      [
+        10,
+        "softmax"
+      ]
+    ],
+    "learning_rate": 0.001,
+    "batch_size": 64,
+    "loss": 3.8943071960721882,
+    "accuracy": 0.539009111617312,
+    "seed": 50
+  },
+  {
+    "architecture": [
+      [
+        256,
+        "relu_sin"
+      ],
+      [
+        128,
+        "relu_sin"
+      ],
+      [
+        10,
+        "softmax"
+      ]
+    ],
+    "learning_rate": 0.001,
+    "batch_size": 64,
+    "loss": 18.69835979923331,
+    "accuracy": 0.44860478359908884,
+    "seed": 51
+  },
+  {
+    "architecture": [
+      [
+        256,
+        "relu"
+      ],
+      [
+        128,
+        "relu"
+      ],
+      [
+        10,
+        "softmax"
+      ]
+    ],
+    "learning_rate": 0.003,
+    "batch_size": 64,
+    "loss": 24.277109868609536,
+    "accuracy": 0.2945615034168565,
+    "seed": 48
+  },
+  {
+    "architecture": [
+      [
+        512,
+        "relu"
+      ],
+      [
+        256,
+        "relu"
+      ],
+      [
+        10,
+        "softmax"
+      ]
+    ],
+    "learning_rate": 0.001,
+    "batch_size": 128,
+    "loss": 25.040935380764154,
+    "accuracy": 0.2717824601366743,
+    "seed": 49
+  },
+  {
+    "architecture": [
+      [
+        256,
+        "relu"
+      ],
+      [
+        128,
+        "relu"
+      ],
+      [
+        10,
+        "softmax"
+      ]
+    ],
+    "learning_rate": 0.001,
+    "batch_size": 64,
+    "loss": 27.641497819011512,
+    "accuracy": 0.19874715261958997,
+    "seed": 47
+  }
+]
