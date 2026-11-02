@@ -1,6 +1,6 @@
 from optimised_forward_cnn import neural_network
 import numpy as np
-from sklearn.datasets import load_digits
+
 import random as rd
 import ssl
 

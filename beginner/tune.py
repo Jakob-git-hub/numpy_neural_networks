@@ -42,6 +42,7 @@ for i in range(1,neuronen_exp+1):
 
 print(average_loss)
 print(min(average_loss))
+
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
