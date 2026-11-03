@@ -95,9 +95,10 @@ class neural_net:
 
   
     def arctan_sin(self, x):
-        return (np.arctan(x) +np.sin(x))
+        return np.arctan(x) + np.sin(x)
+
     def arctan_sin_d(self, x):
-        return  np.select([x < 0, x > 0], [1/(1+x**2), np.cos(x) + 1/(1+x**2)])
+        return 1 / (1 + x**2) + np.cos(x)
     def arctan_sin_backward(self, x, upstream_gradient):
         return upstream_gradient * self.arctan_sin_d(x)
 
