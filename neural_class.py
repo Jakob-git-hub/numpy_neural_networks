@@ -14,10 +14,41 @@ class Layer:
         self.weight = np.random.randn(input_dim, neurons) * scale
         self.bias = np.zeros((1, neurons))
 
+    def forward(self, input_data):
+        self.input_data = input_data
+        self.linear_output = np.dot(input_data, self.weight) + self.bias
+        return self.linear_output
+
+class Max_pooling:
+    def __init__(self, pool_size):
+        self.pool_size = pool_size
+
+class Flatten:
+    def __init__(self):
+        pass
+    def forward(self,input_data):
+        new_shape = input_data.shape[:-2] + (input_data.shape[-2] * input_data.shape[-1],)
+        flattened = input_data.reshape(new_shape)
+        return flattened
+    
+class Convolutional:
+    def __init__(self, kernel_size, stride, input_channels):
+        scale = np.sqrt(2.0 / input_channels) 
+        self.kernel_size = kernel_size
+        self.stride = stride 
+        self.kernel_weights = np.random.randn(kernel_size) * scale
+        
+    def forward(self, input_data):
+        np.pad(input_data,    pad_width=((0, 0), (1, 1), (1, 1)), mode='constant', constant_values=0)
+        
 
 
 class neural_net:
     def __init__(self, features, architecture):
+        mapping = { Convolutional: "conv",
+                    Max_pooling: "max_pooling",
+                    Flatten: "flatten",
+                    Layer: "dense" }
         self.architecture = architecture
         self.features = features
         self.model = self.init_weights()
@@ -53,18 +84,29 @@ class neural_net:
         return upstream_gradient * self.sin_d(x)
     
     def relu_sin(self, x):
-        return (np.sin(x) + np.maximum(0,x))
+
+        return np.maximum(0, x) + 0.5 * np.sin(x)
+
     def relu_sin_d(self, x):
-        return  np.select([x < 0, x > 0], [np.cos(x), 1 + np.cos(x)])
+        return np.where(x > 0, 1.0 + 0.5 * np.cos(x), 0.5 * np.cos(x))
+
     def relu_sin_backward(self, x, upstream_gradient):
         return upstream_gradient * self.relu_sin_d(x)
-    
+
+  
     def arctan_sin(self, x):
         return (np.arctan(x) +np.sin(x))
     def arctan_sin_d(self, x):
         return  np.select([x < 0, x > 0], [1/(1+x**2), np.cos(x) + 1/(1+x**2)])
     def arctan_sin_backward(self, x, upstream_gradient):
         return upstream_gradient * self.arctan_sin_d(x)
+
+    def tanh_sin(self, x):
+        return (np.tanh(x) + np.sin(x))
+    def tanh_sin_d(self, x):
+        return  np.select([x < 0, x > 0], [1/(np.cosh(x)**2), np.cos(x) + 1/(np.cosh(x)**2)])
+    def tanh_sin_backward(self, x, upstream_gradient):
+        return upstream_gradient * self.tanh_sin_d(x)
     
     def softmax(self,x):
         if x.ndim == 1:
@@ -133,7 +175,7 @@ class neural_net:
 
         return grad
 
-    def fit(self, dataset, learning_rate, epochs):
+    def fit(self, dataset, learning_rate, epochs, x_test, y_test):
 
         for j in range(epochs):
             dataset.shuffle_data()
@@ -147,8 +189,10 @@ class neural_net:
                     layer.bias -= learning_rate * grads[idx]["bias"]
 
             Loss, Accuracy = self.evaluate(dataset)
-  
-            print(f"Episode: {j}, Loss: {Loss:.4f}, Accuracy: {Accuracy:.2%}")
+            test_Loss, test_Accuracy = self.test(x_test, y_test)
+            train_acc = self.train_accuracy(dataset)
+            
+            print(f"Episode: {j}, Loss: {Loss:.4f}, Accuracy: {Accuracy:.2%}, Test_dataset Loss: {test_Loss:.4f}, Test_dataset Accuracy: {test_Accuracy:.2%}, Train_dataset Accuracy: {train_acc:.2%}")
 
 
 
@@ -164,7 +208,21 @@ class neural_net:
         accuracy = np.mean(pred_label == np.argmax(dataset.y_test, axis=1))
           
         return loss, accuracy
-    
+    def test(self, x_test, y_test):
+        output,_ = self.forward_pass(x_test)
+        
+        eps = 1e-15
+        pred_clipped = np.clip(output, eps, 1 - eps)
+        pred_label = np.argmax(output, axis=1)
+        loss = -np.mean(np.sum(y_test * np.log(pred_clipped), axis=1))
+        accuracy = np.mean(pred_label == np.argmax(y_test, axis=1))
+          
+        return loss, accuracy
+    def train_accuracy(self, dataset):
+        output,_ = self.forward_pass(dataset.x_train[:dataset.n_batches*dataset.batch_size])
+        pred_label = np.argmax(output, axis=1)
+        accuracy = np.mean(pred_label == np.argmax(dataset.y_train[:dataset.n_batches*dataset.batch_size], axis=1))
+        return accuracy
 class dataset:  
     def __init__(self,x,y):
         self.x = x

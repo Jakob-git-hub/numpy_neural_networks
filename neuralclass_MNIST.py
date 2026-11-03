@@ -7,18 +7,20 @@ import ssl
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
-from tensorflow.keras.datasets import fashion_mnist # type: ignore
+from tensorflow.keras.datasets import mnist # type: ignore
 
 # Load the separate train and test sets
-(x_train, y_train), (x_test, y_test) = fashion_mnist.load_data()
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
 
 # Concatenate them into a single dataset (70,000 images total)
 x_all = np.concatenate([x_train, x_test], axis=0)
 y_all = np.concatenate([y_train, y_test], axis=0)
-
-batch_size = 64
-architecture = [[512, "arctan_sin"],[1024, "arctan_sin"],[128, "arctan_sin"], [32,"arctan_sin"],[10, "softmax"]]
+activattion = "relu_sin"
+batch_size = 128
+architecture = [[2500, "arctan_sin" ], [2000, activattion], [1500, "tanh_sin"],[1000, activattion],[500, "arctan_sin"],[10, "softmax"]]
 Data = dataset(x_all, y_all)
+test_data = dataset(x_test, y_test)
+test_data.prepare(10, 0.1, batch_size)  # 10 classes, 80% training data
 Data.prepare(10, 0.9, batch_size)  # 10 classes, 80% training data
 neural_network = neural_net(Data.x.shape[1], architecture)
-neural_network.fit(Data, learning_rate=0.1, epochs=50)
+neural_network.fit(Data, learning_rate=0.01, epochs=10, x_test=test_data.x_test, y_test=test_data.y_test)  # Train the model
