@@ -15,9 +15,10 @@ from tensorflow.keras.datasets import mnist # type: ignore
 # Concatenate them into a single dataset (70,000 images total)
 x_all = np.concatenate([x_train, x_test], axis=0)
 y_all = np.concatenate([y_train, y_test], axis=0)
-activattion = "t_sin"  # Choose activation function: "relu", "sigmoid", "tanh", "arctan_sin", "relu_sin", "tanh_sin"
+activattion = "relu_sin"  # Choose activation function: "relu", "sigmoid", "tanh", "arctan_sin", "relu_sin", "tanh_sin"
 batch_size = 128
-architecture = [[2500,activattion ], [2000, activattion], [1500, activattion],[1000, activattion],[500, activattion],[10, "softmax"]]
+architecture = [[250,activattion ],[100, activattion],[30, activattion],[10, "softmax"]]
+
 Data = dataset(x_all, y_all)
 test_data = dataset(x_test, y_test)
 test_data.prepare(10, 0.1, batch_size)  # 10 classes, 80% training data

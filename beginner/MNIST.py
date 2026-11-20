@@ -1,4 +1,4 @@
-from optimised_forward_cnn import neural_network
+from beginner.optimised_forward_cnn import neural_network
 import numpy as np
 
 import random as rd
